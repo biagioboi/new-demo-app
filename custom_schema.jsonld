@@ -1,32 +1,25 @@
 {
     "@context": {
-        "@version": 1.0,
-        "@protected": true,
         "acp": "https://www.w3.org/ns/solid/acp#",
-        "context": {
-            "@id": "acp:context",
-            "@type": "@vocab"
+    },
+        "acp:context": {
+            "id": "acp:context",
         },
-        "target": {
-            "@id": "acp:issuer",
-            "type": "@id"
+        "acp:target": {
+            "id": "acp:issuer",
         },
-        "issuer": {
-            "@id": "acp:issuer",
-            "type": "@id"
+        "acp:issuer": {
+            "id": "acp:issuer",
         },
-        "client": {
-            "@id": "acp:client",
-            "type": "@id"
+        "acp:client": {
+            "id": "acp:client",
         },
-        "agent": {
-            "@id": "acp:agent",
-            "type": "@id"
+        "acp:agent": {
+            "id": "acp:agent",
         },
-        "creator": {
-            "@id": "acp:agent",
-            "type": "@id"
-        },
+        "acp:creator": {
+            "id": "acp:creator",
+        }
 
-    }
+
 }
