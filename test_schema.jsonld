@@ -1,6 +1,5 @@
 {
   "@context": {
-    "referenceNumber": "https://example.com/vocab#referenceNumber",
-    "favoriteFood": "https://example.com/vocab#favoriteFood"
+    "acp": "https://www.w3.org/ns/solid/acp#",
   }
 }
