@@ -1,6 +1,7 @@
 {
   "@context": {
     "acp": "https://www.w3.org/ns/solid/acp#",
-    "client": {"@id" : "acp:client", "@type" : "@id"}
+    "client": {"@id" : "acp:client", "@type" : "@id"},
+    "creator": {"@id" : "acp:creator", "@type" : "@id"}
   }
 }
