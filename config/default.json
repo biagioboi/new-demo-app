@@ -1,0 +1,9 @@
+{
+  "wallet": {
+    "id": "ID_OF_YOUR_WALLET",
+    "key": "KEY_OF_YOUR_WALLET",
+    "seed_private_key": "SEED_FOR_THE_PRIVATE_KEY",
+    "endpoint": "ENDPOINT_OF_YOUR_WALLET",
+    "ledger_url": "LEDGER_URL"
+  }
+}

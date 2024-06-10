@@ -1,0 +1,46 @@
+{
+  "name": "solid-demo-application",
+  "version": "1.0.0",
+  "description": "Demo Application to interact with Community Solid Server using Verifiable Credentials",
+  "main": "index.js",
+  "author": "Biagio Boi",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "webpack serve --open",
+    "start-express": "node src/app.js"
+  },
+  "dependencies": {
+    "@hyperledger/anoncreds-nodejs": "^0.2.2",
+    "@hyperledger/aries-askar-nodejs": "^0.2.1",
+    "@hyperledger/indy-vdr-nodejs": "^0.2.2",
+    "body-parser": "^1.20.2",
+    "config": "^3.3.11",
+    "did-resolver": "^4.1.0",
+    "inquirer": "^8.2.5",
+    "qrcode": "^1.5.3",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.20",
+    "web-did-resolver": "^2.0.27"
+  },
+  "devDependencies": {
+    "@credo-ts/anoncreds": "*",
+    "@credo-ts/askar": "*",
+    "@credo-ts/cheqd": "*",
+    "@credo-ts/core": "*",
+    "@credo-ts/indy-vdr": "*",
+    "@credo-ts/node": "*",
+    "@types/figlet": "^1.5.4",
+    "@types/inquirer": "^8.2.6",
+    "clear": "^0.1.0",
+    "css-loader": "^6.8.1",
+    "figlet": "^1.5.2",
+    "style-loader": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}

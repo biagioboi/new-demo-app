@@ -1,0 +1,89 @@
+h2,h3 {
+    margin: 1rem 1.2rem 1rem 1.4rem;
+}
+
+body {
+   background-color: skyblue;
+}
+
+header {
+   border-bottom: #5795b9 solid;
+   padding-left: .5rem;
+}
+
+.panel {
+   border: 1px solid #005b81;
+   border-radius: 4px;
+   box-shadow: rgb(184, 196, 194) 0px 4px 10px -4px;
+   box-sizing: border-box;
+
+   padding: 1rem 1.5rem;
+   margin: 1rem 1.2rem 1rem 1.2rem;
+}
+
+#requests{
+   width: 500px;
+}
+
+#searchBar{
+   width: 100%;
+   height: auto;
+}
+
+#searchDiv{
+   width:100%;
+   height: auto;
+   display:flex;
+}
+
+#responseArea{
+   width: 100%;
+   height: auto;
+   -webkit-box-sizing: border-box;
+}
+
+#heading{
+   color:darkgreen;
+}
+
+.loader {
+   border: 16px solid #f3f3f3; /* Light grey */
+   border-top: 16px solid #3498db; /* Blue */
+   border-radius: 50%;
+   width: 120px;
+   height: 120px;
+   animation: spin 2s linear infinite;
+   margin:auto;
+   display: none;
+}
+
+@keyframes spin {
+   0% { transform: rotate(0deg); }
+   100% { transform: rotate(360deg); }
+}
+
+.loader-almost-load {
+   border-top: 16px solid blue;
+   border-right: 16px solid green;
+   border-bottom: 16px solid red;
+}
+
+.loader-loaded {
+   border-top: 16px solid blue;
+   border-right: 16px solid green;
+   border-bottom: 16px solid red;
+   border-left: 16px solid pink;
+}
+
+.container-loader {
+   display: flex;
+   margin: auto;
+}
+
+.label-loader {
+   display: none;
+}
+
+#invitation {
+   overflow-wrap: break-word;
+}

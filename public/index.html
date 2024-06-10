@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>VC Protocol Demo</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.js"></script>
+  <script defer src="main.js"></script>
+  <link rel="stylesheet" href="my-demo.css" />
+</head>
+
+<body>
+  <header>
+    <h2 id="heading">Demo - App</h2>
+  </header>
+  <p>This app can be used to send requests to the CSS server.
+  </p>
+  <div id="requests" class="panel">
+    <div class="row">
+      <label>Send Requests</label>
+      <div id="searchDiv">
+        <input id="searchBar" name="searchBar" type="text" value="http://localhost:3000/my-pod/test-folder/test-resource.txt"></input>
+        <button id="getBtn" name="getBtn">GET</button>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <textarea id="responseArea" name="responseArea" rows="15" cols="42" disabled></textarea>
+      </div>
+    </div>
+
+    <div class="row">
+      <pre id="responseVP">
+
+      </pre>
+    </div>
+    <div id="invitation"></div>
+
+    <div class="label-loader">Loading..</div>
+    <div class="container-loader">
+      <div class="loader"></div>
+    </div>
+  </div>
+</body>
+
+</html>
