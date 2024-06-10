@@ -1,0 +1,32 @@
+{
+    "@context": {
+        "@version": 1.0,
+        "@protected": true,
+        "acp": "https://www.w3.org/ns/solid/acp#",
+        "context": {
+            "@id": "acp:context",
+            "@type": "@vocab"
+        },
+        "target": {
+            "@id": "acp:issuer",
+            "type": "@id"
+        },
+        "issuer": {
+            "@id": "acp:issuer",
+            "type": "@id"
+        },
+        "client": {
+            "@id": "acp:client",
+            "type": "@id"
+        },
+        "agent": {
+            "@id": "acp:agent",
+            "type": "@id"
+        },
+        "creator": {
+            "@id": "acp:agent",
+            "type": "@id"
+        },
+
+    }
+}

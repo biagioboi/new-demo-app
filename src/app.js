@@ -135,23 +135,16 @@ async function activateListener(agent, issuing, verify) {
                         jsonld: {
                             credential: {
                                 "@context": [
-                                    'https://www.w3.org/2018/credentials/v1',
-                                    'https://w3id.org/citizenship/v1',
-                                    'https://w3id.org/security/bbs/v1',
+                                    'acp'
                                 ],
                                 id: 'https://example.com/credentials/3732',
                                 type: ['VerifiableCredential', 'PermanentResidentCard'],
                                 issuer: "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA",
                                 issuanceDate: "2010-01-01T19:23:24Z",
                                 credentialSubject: {
-                                    id: 'did:key:z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY',
-                                    alumniOf: 'test',
-                                    type: ['PermanentResident', 'Person'],
-                                    givenName: 'JOHN',
-                                    familyName: 'SMITH',
-                                    gender: 'Male',
-                                    image: 'data:image/png;base64,iVBORw0KGgokJggg==',
-                                    playerOf: 'Napoli'
+                                    client: "",
+                                    target: "",
+                                    issuer: ""
 
                                 },
                             },
@@ -278,15 +271,19 @@ app.get('/generateInvitation', async (req, res) => {
 
 app.post('/requestUserCredential', async (req, res) => {
     res.status(200);
-
+    /* Is the domain what we want for the request (VPR)? */
+    if (req.body.domain === "")
     console.log(req.body.challenge)
     /* To attach the listner only to the current connection, checks on outOfBandId field  */
     agent.events.on(ConnectionEventTypes.ConnectionStateChanged, async ({payload}) => {
         if (payload.connectionRecord.state === DidExchangeState.Completed && payload.connectionRecord.outOfBandId === req.body.connectionId) {
             await agent.basicMessages.sendMessage(payload.connectionRecord.id, "Hello, we can start to communicate")
             /* Start by sending a proof request, if we want to assess the identity */
+            /* todo: get my_did from created did */
+            let my_did = "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA";
+            /* TODO: Insert a field in the VPR that identify the application, by modifying PEX library */
 
-
+            /* MAYBE_TODO: By now we have a list of authorized did from the holder, but in the future implementation we may have a protocol for exchanging app DID and add new dids to the list */
             const proof_request = await agent.proofs.requestProof({
                 protocolVersion: 'v2',
                 connectionId: payload.connectionRecord.id,
@@ -294,6 +291,7 @@ app.post('/requestUserCredential', async (req, res) => {
                     presentationExchange: {
                         presentationDefinition: {
                             "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+                            "acp_client": my_did,
                             "input_descriptors": [
                                 {
                                     "id": "wa_driver_license",

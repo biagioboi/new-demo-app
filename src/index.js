@@ -19,17 +19,17 @@ getBtn.onclick = function () {
     //speedTests(500);
 };
 
-async function VcBasedrequests(){
+async function VcBasedrequests() {
     let url = searchBar.value;
     //If we have a VP and just arrived from a redirect, use it to send a request for the resource from CSS server
-    if(params.get("vp")){
+    if (params.get("vp")) {
         let VP = params.get("vp");
         console.log('Sending request for the resource with a VP...');
         let resource = await requestWithVP(url, VP);
         console.log(resource);
         responseArea.innerHTML = resource;
         //Otherwise, send first request and follow protocol to acquire VP
-    }else{
+    } else {
         console.log("Sending first request for the resource...");
         //Message containing the app, issuer and user, requesting the resource at the url entered in the input box
         let response = await fetch(url, {
@@ -50,49 +50,59 @@ async function VcBasedrequests(){
 
         let nonce = undefined;
         let domain = undefined;
-        try{
+        try {
             nonce = VPrequest.VerifiablePresentation.challenge;
             domain = VPrequest.VerifiablePresentation.domain;
-        }catch(e){
+        } catch (e) {
             console.log("No nonce or domain received in response");
             return;
         }
         $(".label-loader").html("Copy the code and accept the request on your mobile phone").fadeIn();
         $(".loader").fadeIn();
-        //Send request to User to acquire VP (after 1 second delay)
-       window.setTimeout(async ()=> {
-           let connectionId;
-           $.ajax({
-               method: "GET",
-               url: "http://localhost:8080/generateInvitation",
-               success: async function (data) {
-                   console.log(data)
-                   connectionId = data.connectionId
-                   $("#invitation").html(data.url)
-                   $("#invitation").append("<img src=\"" + data.qrcode + "\">");
-                   $.ajax({
-                       method: "POST",
-                       url: "http://localhost:8080/requestUserCredential",
-                       data: { connectionId: connectionId, challenge:  VPrequest.VerifiablePresentation.challenge, domain: VPrequest.VerifiablePresentation.domain},
-                       success: async function (data) {
-                           $("#invitation").html("");
-                           $(".label-loader").css("display", "none").html("Proof accepted, sending the request to the server").fadeIn();
-                           $(".loader").css("display", "none").addClass("loader-almost-load").fadeIn();
-                           $("#responseVP").html(JSON.stringify(data, undefined, 2))
-                           let resource = await requestWithVP(url, data);
-                           responseArea.innerHTML = resource;
-                           window.setTimeout(() => {$(".loader-loaded").css("display", "none")}, 500);
-                       }
-                   })
-               }
-           })
-        }, 1000);
+        if (url === VPrequest.VerifiablePresentation.domain || true) {
+            //Send request to User to acquire VP (after 1 second delay)
+            window.setTimeout(async () => {
+                let connectionId;
+                $.ajax({
+                    method: "GET",
+                    url: "http://localhost:8080/generateInvitation",
+                    success: async function (data) {
+                        console.log(data)
+                        connectionId = data.connectionId
+                        $("#invitation").html(data.url)
+                        $("#invitation").append("<img src=\"" + data.qrcode + "\">");
+                        $.ajax({
+                            method: "POST",
+                            url: "http://localhost:8080/requestUserCredential",
+                            data: {
+                                connectionId: connectionId,
+                                challenge: VPrequest.VerifiablePresentation.challenge,
+                                domain: VPrequest.VerifiablePresentation.domain
+                            },
+                            success: async function (data) {
+                                $("#invitation").html("");
+                                $(".label-loader").css("display", "none").html("Proof accepted, sending the request to the server").fadeIn();
+                                $(".loader").css("display", "none").addClass("loader-almost-load").fadeIn();
+                                $("#responseVP").html(JSON.stringify(data, undefined, 2))
+                                let resource = await requestWithVP(url, data);
+                                responseArea.innerHTML = resource;
+                                window.setTimeout(() => {
+                                    $(".loader-loaded").css("display", "none")
+                                }, 500);
+                            }
+                        })
+                    }
+                })
+            }, 1000);
+        } else {
+            alert("Server is not sending the right domain, they don't match.");
+        }
     }
 }
 
 //Sends request to User app and ask for a VP
 //Gets redirected to User HTML page and should return to App with VP
-async function getVP(nonce, domain){
+async function getVP(nonce, domain) {
     console.log("Sending request to the User app...");
     let url = 'http://localhost:8081/vprequest';
     let response = await fetch(url, {
@@ -111,15 +121,15 @@ async function getVP(nonce, domain){
             redirect_uri: window.location.href
         })
     });
-    if(response.url !== undefined){
+    if (response.url !== undefined) {
         window.location = response.url;
-    }else{
+    } else {
         console.log('Redirect URI not included in response.');
         return;
     }
 }
 
-async function requestWithVP(url, vpJwt){
+async function requestWithVP(url, vpJwt) {
     let msg = {
         method: "GET",
         headers: {
@@ -137,7 +147,7 @@ async function requestWithVP(url, vpJwt){
 }
 
 //full protocol from start to finish
-async function speedTest(){
+async function speedTest() {
     let startTime = performance.now();
     //console.log(`Start Time: ${startTime}`);
 
@@ -161,10 +171,10 @@ async function speedTest(){
     let VPrequest = result;
     let nonce = undefined;
     let domain = undefined;
-    try{
+    try {
         nonce = VPrequest.VerifiablePresentation.challenge;
         domain = VPrequest.VerifiablePresentation.domain;
-    }catch(e){
+    } catch (e) {
         console.log("No nonce or domain received in response");
         return;
     }
@@ -200,11 +210,11 @@ async function speedTest(){
     return timeTaken;
 }
 
-async function speedTests(sampleSize){
+async function speedTests(sampleSize) {
     console.log(`Sending ${sampleSize} requests using VC-based protocol...`)
     let i = 1;
     let totalTime = 0;
-    while(i<=sampleSize){
+    while (i <= sampleSize) {
         console.log(`Request ${i}:`);
         totalTime += await speedTest();
         i++;
