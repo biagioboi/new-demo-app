@@ -12,10 +12,14 @@
             "id": "@id",
             "type": "@type",
             "acp": "https://www.w3.org/ns/solid/acp#",
-            "client": {"@id" : "acp:client", "@type" : "@id"},
+            "attribute": {"@id" : "acp:attribute", "@type" : "@id"},
+            "target": {"@id" : "acp:target", "@type" : "@id"},
+            "agent": {"@id" : "acp:agent", "@type" : "@id"},
             "creator": {"@id" : "acp:creator", "@type" : "@id"},
+            "owner": {"@id" : "acp:owner", "@type" : "@id"},
+            "client": {"@id" : "acp:client", "@type" : "@id"},
             "issuer": {"@id" : "acp:issuer", "@type" : "@id"},
-            "mode": {"@id" : "acp:mode", "@type": "@id"}
+            "vc": {"@id" : "acp:vc", "@type": "@id"}
         }
     }
   }
