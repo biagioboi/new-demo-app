@@ -1,10 +1,22 @@
 {
   "@context": {
-    "acp": "https://www.w3.org/ns/solid/acp#",
-    "Context": {"@id" : "acp:Context", "@type": "@id"},
-    "client": {"@id" : "acp:client", "@type" : "@id"},
-    "creator": {"@id" : "acp:creator", "@type" : "@id"},
-    "issuer": {"@id" : "acp:issuer", "@type" : "@id"},
-    "mode": {"@id" : "acp:mode", "@type": "@id"}
+    "@version":  1.1,
+    "@protected": true,
+    "id": "@id",
+    "type": "@type",
+    "SolidACPContext": {
+        "@id": "https://www.w3.org/ns/solid/acp#Context",
+        "@context": {
+            "@version": 1.1,
+            "@protected": true,
+            "id": "@id",
+            "type": "@type",
+            "acp": "https://www.w3.org/ns/solid/acp#",
+            "client": {"@id" : "acp:client", "@type" : "@id"},
+            "creator": {"@id" : "acp:creator", "@type" : "@id"},
+            "issuer": {"@id" : "acp:issuer", "@type" : "@id"},
+            "mode": {"@id" : "acp:mode", "@type": "@id"}
+        }
+    }
   }
 }
