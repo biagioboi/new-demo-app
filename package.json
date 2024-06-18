@@ -12,6 +12,7 @@
     "start-express": "node src/app.js"
   },
   "dependencies": {
+    "@digitalcredentials/vc": "file:digitalcredentials-vc-7.0.0.tgz",
     "@hyperledger/anoncreds-nodejs": "^0.2.2",
     "@hyperledger/aries-askar-nodejs": "^0.2.1",
     "@hyperledger/indy-vdr-nodejs": "^0.2.2",
@@ -21,6 +22,7 @@
     "config": "^3.3.11",
     "did-resolver": "^4.1.0",
     "inquirer": "^8.2.5",
+    "prompt-sync": "^4.2.0",
     "qrcode": "^1.5.3",
     "sqlite3": "^5.1.7",
     "typeorm": "^0.3.20",
@@ -30,7 +32,7 @@
     "@credo-ts/anoncreds": "*",
     "@credo-ts/askar": "*",
     "@credo-ts/cheqd": "*",
-    "@credo-ts/core": "*",
+    "@credo-ts/core": "file:credo-ts-core-0.5.3.tgz",
     "@credo-ts/indy-vdr": "*",
     "@credo-ts/node": "*",
     "@types/figlet": "^1.5.4",

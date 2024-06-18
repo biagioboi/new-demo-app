@@ -14,7 +14,10 @@ const {
     DifPresentationExchangeProofFormatService, JsonLdCredentialFormatService, JwaSignatureAlgorithm, DidDocumentBuilder,
     getEd25519VerificationKey2018, W3cCredentialsModule, CredentialEventTypes, SignatureSuiteRegistry,
     getEd25519VerificationKey2020, W3cJsonLdVerifiableCredential, CredentialState, W3cJsonLdVerifiablePresentation,
-    JsonTransformer, W3cCredentialService
+    JsonTransformer, W3cCredentialService, WebDidResolver, DidDocumentService, ConnectionService, DidCommV1Service,
+    ConsoleLogger, LogLevel, RoutingService, HandshakeProtocol, MediationRecipientService, MediatorPickupStrategy,
+    MediationRecipientModule, MediatorService, MediatorModule, OutOfBandEventTypes, PeerDidNumAlgo, ClaimFormat,
+    CREDENTIALS_CONTEXT_V1_URL, WRAPPER_VP_CONTEXT_URL, W3cPresentationRequest
 } = require('@credo-ts/core')
 const {
     AnonCredsCredentialFormatService,
@@ -34,6 +37,8 @@ const {AskarModule} = require('@credo-ts/askar')
 const {anoncreds} = require('@hyperledger/anoncreds-nodejs')
 const {AnonCredsRsModule} = require('@credo-ts/anoncreds')
 const sys_config = require('config');
+
+const prompt = require('prompt-sync')();
 const getGenesisTransaction = async (url) => {
     const response = await fetch(url)
     return await response.text()
@@ -50,6 +55,7 @@ const initializeIssuerAgent = async (ledgerUrl, endPoint) => {
         },
         endpoints: [endPoint],
         autoUpdateStorageOnStartup: true,
+        logger: new ConsoleLogger(LogLevel.debug)
     }
 
     // A new instance of an agent is created here
@@ -60,7 +66,7 @@ const initializeIssuerAgent = async (ledgerUrl, endPoint) => {
     })
 
     // Register a simple `WebSocket` outbound transport - not needed
-    // agent.registerOutboundTransport(new WsOutboundTransport())
+    agent.registerOutboundTransport(new WsOutboundTransport())
 
     // Register a simple `Http` outbound transport
     agent.registerOutboundTransport(new HttpOutboundTransport())
@@ -73,6 +79,7 @@ const initializeIssuerAgent = async (ledgerUrl, endPoint) => {
     await agent.initialize()
 
 
+    const did = `did:web:secureapp.solidcommunity.net:public`
     try {
         // Try to create the key for the wallet, if it already exists then jump these instructions
         const ed25519Key = await agent.wallet.createKey({
@@ -80,23 +87,29 @@ const initializeIssuerAgent = async (ledgerUrl, endPoint) => {
             privateKey: TypedArrayEncoder.fromString(sys_config.get('wallet.seed_private_key'))
         })
 
-        const did = `did:key:${ed25519Key.fingerprint}`
-        console.log(did)
         const builder = new DidDocumentBuilder(did)
-        const ed25519VerificationMethod2020 = getEd25519VerificationKey2020({
+        const ed25519VerificationMethod2018 = getEd25519VerificationKey2018({
             key: ed25519Key,
-            id: `${did}#${ed25519Key.fingerprint}ab`,
+            id: `${did}#${ed25519Key.fingerprint}`,
             controller: did,
         })
 
+        builder.addService(new DidCommV1Service({
+            "id": "#inline-0",
+            "serviceEndpoint": sys_config.get('wallet.endpoint'),
+            "type": "did-communication",
+            "recipientKeys": [`${did}#${ed25519Key.fingerprint}`],
+            "routingKeys": [`${did}#${ed25519Key.fingerprint}`]
+        }));
 
-        builder.addVerificationMethod(ed25519VerificationMethod2020)
-        builder.addAuthentication(ed25519VerificationMethod2020.id)
-        builder.addAssertionMethod(ed25519VerificationMethod2020.id)
 
+        builder.addVerificationMethod(ed25519VerificationMethod2018)
+        builder.addAuthentication(ed25519VerificationMethod2018.id)
+        builder.addAssertionMethod(ed25519VerificationMethod2018.id)
+        console.log(JSON.stringify(builder.build()));
 
         await agent.dids.create({
-            method: 'key',
+            method: 'web',
             didDocument: builder.build(),
             options: {
                 keyType: KeyType.Ed25519,
@@ -104,7 +117,20 @@ const initializeIssuerAgent = async (ledgerUrl, endPoint) => {
             }
         })
     } catch (e) {
+        let didResp = await agent.dids.resolve(did);
+        let u = await agent.dids.resolveDidDocument(did)
 
+        await agent.dids.import({
+            did,
+            didDocument: didResp.didDocument,
+            overwrite: true,
+            options: {
+                keyType: KeyType.Ed25519,
+                privateKey: TypedArrayEncoder.fromString(sys_config.get('wallet.seed_private_key'))
+            }
+        })
+        let created_dids = await agent.dids.getCreatedDids({method: 'web'});
+        console.log("This is the App Wallet, it has this DID: " + created_dids[0].did);
 
     }
 
@@ -119,117 +145,6 @@ async function startEverything() {
     //await activateListener(agent, false, true)
 }
 
-async function activateListener(agent, issuing, verify) {
-
-    agent.events.on(ConnectionEventTypes.ConnectionStateChanged, async ({payload}) => {
-        if (payload.connectionRecord.state === DidExchangeState.Completed) {
-            await agent.basicMessages.sendMessage(payload.connectionRecord.id, "Hello, we can start to communicate")
-
-            /* Start by sending an offer, if we want to release the credentials */
-
-            if (issuing) {
-                await agent.credentials.offerCredential({
-                    connectionId: payload.connectionRecord.id,
-                    protocolVersion: 'v2',
-                    credentialFormats: {
-                        jsonld: {
-                            credential: {
-                                "@context": [
-                                    'acp'
-                                ],
-                                id: 'https://example.com/credentials/3732',
-                                type: ['VerifiableCredential', 'PermanentResidentCard'],
-                                issuer: "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA",
-                                issuanceDate: "2010-01-01T19:23:24Z",
-                                credentialSubject: {
-                                    client: "",
-                                    target: "",
-                                    issuer: ""
-
-                                },
-                            },
-                            options: {
-                                proofPurpose: 'assertionMethod',
-                                proofType: "Ed25519Signature2018"
-                            }
-                        }
-
-                        ,
-                    },
-                })
-            }
-
-            /* Start by sending a proof request, if we want to assess the identity */
-            if (verify) {
-                const proof_request = await agent.proofs.requestProof({
-                    protocolVersion: 'v2',
-                    connectionId: payload.connectionRecord.id,
-                    proofFormats: {
-                        presentationExchange: {
-                            presentationDefinition: {
-                                "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
-                                "input_descriptors": [
-                                    {
-                                        "id": "wa_driver_license",
-                                        "name": "Washington State Business License",
-                                        "purpose": "We can only allow licensed Washington State business representatives into the WA Business Conference",
-                                        "constraints": {
-                                            "fields": [
-                                                {
-                                                    "path": [
-                                                        "$.credentialSubject.alumniOf",
-                                                        "$.credentialSubject.claims.alumniOf",
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ],
-                                "format": {
-                                    "ldp_vc": {
-                                        "proof_type": [
-                                            "JsonWebSignature2020",
-                                            "Ed25519Signature2018",
-                                            "EcdsaSecp256k1Signature2019",
-                                            "RsaSignature2018"
-                                        ]
-                                    },
-                                    "ldp_vp": {
-                                        "proof_type": ["Ed25519Signature2018"]
-                                    },
-                                    "ldp": {
-                                        "proof_type": ["RsaSignature2018"]
-                                    }
-                                }
-                            }
-
-                        }
-
-                    }
-                });
-            }
-        }
-        /* Set up the listener for the credential released */
-        agent.events.on(CredentialEventTypes.CredentialStateChanged, ({payload}) => {
-            /* If the credential offer has been accepted, we have to release these credentials */
-            if (payload.credentialRecord.state === CredentialState.RequestReceived) {
-                agent.credentials.acceptRequest({credentialRecordId: payload.credentialRecord.id})
-            }
-        })
-
-        /* Set up the listener for the proof requested */
-        agent.events.on(ProofEventTypes.ProofStateChanged, async ({payload}) => {
-            /* If the presentation of the credentials has been completed, we can show the credentials exchanged */
-            if (payload.proofRecord.state === ProofState.Done) {
-                let info = await agent.proofs.getById(payload.proofRecord.id)
-                console.log(JSON.stringify(await agent.proofs.getFormatData(payload.proofRecord.id)))
-                console.log(JSON.stringify(info))
-            }
-        });
-
-    })
-}
-
 const express = require('express');
 const {randomUUID} = require("crypto");
 const domain = require("domain");
@@ -242,10 +157,11 @@ const {W3cJsonLdCredentialService} = require("@credo-ts/core/build/modules/vc/da
 const app = express();
 const PORT = 8080;
 startEverything().then(result => {
-    console.log("Here")
+    /* Empty */
 })
 app.use(express.static('public'))
 var bodyParser = require('body-parser');
+const OutOfBandEvents_1 = require("@credo-ts/core/build/modules/oob/domain/OutOfBandEvents");
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
@@ -258,97 +174,179 @@ app.get('/', (req, res) => {
 
 app.get('/generateInvitation', async (req, res) => {
     res.status(200);
-    const outOfBandRecord = await agent.oob.createInvitation()
-    console.log(outOfBandRecord);
+    let med = await agent.mediationRecipient.getRouting();
+
+    const outOfBandRecord = await agent.oob.createInvitation({
+        autoAcceptConnection: true,
+        handshake: true,
+        invitationDid: "did:web:secureapp.solidcommunity.net:public",
+    })
+
+    //const outOfBandRecord = await agent.oob.createInvitation();
+
+    //console.log(JSON.stringify(outOfBandRecord, undefined, 2));
+    //let url_invitation = prompt("Insert the invitation URL to begin a communication: ")
+    //await setuplistener(agent);
+    //await agent.oob.receiveInvitationFromUrl(url_invitation, {
+    //    handshake: true,
+
+    //    ourDid: 'did:web:secureapp.solidcommunity.net:public'
+    //})
+    //await agent.oob.receiveInvitationFromUrl(url_invitation)
+    // Dovremmo creare un DIDDocument per il nuovo did, per evitare di fare questo allora si fa uso di did:peer che incorpora tutto.
+
     const invitationUrl = outOfBandRecord.outOfBandInvitation.toUrl({domain: sys_config.get('wallet.endpoint')})
     let qrcode_png
-        await QRCode.toDataURL(invitationUrl, {version: 22}).then(qrcode_generated => {
-            qrcode_png = qrcode_generated
-        })
-        res.json({url: invitationUrl, connectionId: outOfBandRecord.id, qrcode: qrcode_png})
+    await QRCode.toDataURL(invitationUrl, {version: 22}).then(qrcode_generated => {
+        qrcode_png = qrcode_generated
+    })
+    res.json({url: invitationUrl, connectionId: outOfBandRecord.id, qrcode: qrcode_png})
 });
 
+async function ourListener(payload, req, res) {
 
-app.post('/requestUserCredential', async (req, res) => {
-    res.status(200);
-    /* Is the domain what we want for the request (VPR)? */
-    if (req.body.domain === "")
-    console.log(req.body.challenge)
-    /* To attach the listner only to the current connection, checks on outOfBandId field  */
-    agent.events.on(ConnectionEventTypes.ConnectionStateChanged, async ({payload}) => {
-        if (payload.connectionRecord.state === DidExchangeState.Completed && payload.connectionRecord.outOfBandId === req.body.connectionId) {
-            await agent.basicMessages.sendMessage(payload.connectionRecord.id, "Hello, we can start to communicate")
-            /* Start by sending a proof request, if we want to assess the identity */
-            /* todo: get my_did from created did */
-            let my_did = "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA";
-            /* TODO: Insert a field in the VPR that identify the application, by modifying PEX library */
+    if (payload.connectionRecord.state === DidExchangeState.Completed) {
+        console.log(JSON.stringify(payload));
+        //console.log(await agent.connections.rotate({connectionId: payload.connectionRecord.id}));
+        await agent.basicMessages.sendMessage(payload.connectionRecord.id, "Hello, we can start to communicate")
+        /* Start by sending a proof request, if we want to assess the identity */
+        /* todo: get my_did from created did */
+        let my_did = "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA";
+        /* TODO: Insert a field in the VPR that identify the application, by modifying PEX library */
 
-            /* MAYBE_TODO: By now we have a list of authorized did from the holder, but in the future implementation we may have a protocol for exchanging app DID and add new dids to the list */
+        /* MAYBE_TODO: By now we have a list of authorized did from the holder, but in the future implementation we may have a protocol for exchanging app DID and add new dids to the list */
+
+        /* Check if the request contains a proof field, if yes we have to create a wrapper rather than the simple request */
+
+        /* We have to improve here, it is possible that we only sign the request, as well as only the ACP Context, as well as wrap it*/
+        if (req.body.vpr === undefined) {
             const proof_request = await agent.proofs.requestProof({
                 protocolVersion: 'v2',
                 connectionId: payload.connectionRecord.id,
                 proofFormats: {
                     presentationExchange: {
+                        type: ["VerifiablePresentationRequest"],
+                        '@context': ["https://bboi.solidcommunity.net/public/schemas/2024/presexchange.jsonld"],
                         presentationDefinition: {
                             "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
-                            "acp_client": my_did,
-                            "input_descriptors": [
-                                {
-                                    "id": "wa_driver_license",
-                                    "name": "Washington State Business License",
-                                    "purpose": "We can only allow licensed Washington State business representatives into the WA Business Conference",
-                                    "constraints": {
-                                        "fields": [
-                                            {
-                                                "path": [
-                                                    "$.credentialSubject.alumniOf",
-                                                    "$.credentialSubject.claims.alumniOf",
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                }
-                            ],
+                            "input_descriptors": JSON.parse(req.body.input_descriptors),
                             "format": { // Which format we want for the signature? Currently, we are using ldp_vp
                                 "ldp_vc": {
                                     "proof_type": [
                                         "JsonWebSignature2020",
                                         "Ed25519Signature2018",
-                                        "EcdsaSecp256k1Signature2019",
-                                        "RsaSignature2018"
                                     ]
                                 },
                                 "ldp_vp": {
                                     "proof_type": ["Ed25519Signature2018"]
                                 },
-                                "ldp": {
-                                    "proof_type": ["RsaSignature2018"]
-                                }
+                            },
+                            "requestACP": {
+                                "type": ["ACPContext"],
+                                "target": req.body.target,
+                                "agent": req.body.agent,
+                                "creator": req.body.creator,
+                                "owner": req.body.owner,
+                                "client": req.body.client,
+                                "issuer": req.body.issuer
                             }
                         },
                         options: {
                             challenge: req.body.challenge,
-                            domain: req.body.domain
-                        }
-
-
+                            domain: req.body.domain,
+                        },
+                        signPresentationRequest: true,
                     }
 
                 }
             });
-
-
-            /* Set up the listener for the proof requested */
-            agent.events.on(ProofEventTypes.ProofStateChanged, async ({payload}) => {
-                /* If the presentation of the credentials has been completed, we can show the credentials exchanged */
-                if (payload.proofRecord.state === ProofState.Done && proof_request.id === payload.proofRecord.id ) {
-                    let entire_vp = await agent.proofs.getFormatData(payload.proofRecord.id)
-                    res.send(JSON.stringify(entire_vp.presentation.presentationExchange))
+        } else {
+            let vpr_obj = JSON.parse(req.body.vpr)
+            let wrapperVPR = new W3cPresentationRequest(vpr_obj)
+            let wrapped_VPR = await agent.w3cCredentials.createPresentationRequestWrapper({
+                id: "https://example.com/wrappedVPR/321122",
+                vpr: wrapperVPR,
+                termsAndCondition: wrapperVPR.presentation_definition.requestACP,
+            })
+            let wrappedVPRSigned = await agent.w3cCredentials.signWrappedPresentationRequest(
+                {
+                    wrappedVPR: wrapped_VPR,
+                    proofType: 'Ed25519Signature2018',
+                    verificationMethod: 'did:web:secureapp.solidcommunity.net:public#z6Mkg4kRxcfvWfqTV86RdBKHjTks5thJe7R4xsGTs5zASrB7',
                 }
-            });
+            )
+            /* Send it to the user */
+            await agent.proofs.requestWrappedProof({
+                protocolVersion: 'v2',
+                connectionId: payload.connectionRecord.id,
+                requestWrapper: wrappedVPRSigned,
+                proofFormats: {
+                    presentationExchange: {
+                        // Empty, it is just for interop and to say that we want DifExchange
+                    }
+                }
+            })
 
         }
-    })
+
+        /* Set up the listener for the proof requested */
+        agent.events.on(ProofEventTypes.ProofStateChanged, async ({payload}) => {
+
+            console.log(payload);
+            /* If the presentation of the credentials has been completed, we can show the credentials exchanged */
+            if (payload.proofRecord.state === ProofState.Done) {
+                if (payload.proofRecord.isVerified === true) {
+                    /* We are sure that the presentation has been signed and contains the same challenge and we can now produce a new VP containing our singature or maybe not*/
+                    let entire_vp = await agent.proofs.getFormatData(payload.proofRecord.id)
+
+                    const presentationParsed = JsonTransformer.fromJSON(entire_vp.presentation.presentationExchange, W3cJsonLdVerifiablePresentation);
+                    let wrapPresentation = true;
+                    let presentationToSend = presentationParsed
+                    if (wrapPresentation) {
+                        let wrappedVP = await agent.w3cCredentials.createPresentationWrapper({
+                            id: "https://example.com/wrappedVP/321122",
+                            vp: presentationParsed
+                        })
+                        presentationToSend = await agent.w3cCredentials.signWrappedPresentation({
+                            presentation: wrappedVP,
+                            format: ClaimFormat.LdpVp,
+                            verificationMethod: 'did:web:secureapp.solidcommunity.net:public#z6Mkg4kRxcfvWfqTV86RdBKHjTks5thJe7R4xsGTs5zASrB7',
+                            challenge: presentationParsed.proof.challenge,
+                            domain: presentationParsed.proof.domain,
+                            proofType: "Ed25519Signature2018",
+                        })
+                    }
+
+                    res.json(presentationToSend)
+                    //console.log(JSON.stringify(entire_vp.presentation))
+                    agent.events.off(ProofEventTypes.ProofStateChanged, () => {
+                    });
+                    agent.events.off(ConnectionEventTypes.ConnectionStateChanged, () => {
+                    });
+                }
+            }
+        });
+
+    }
+}
+
+app.post('/requestUserCredential', async (req, res) => {
+    res.status(200);
+
+
+    /* Is the domain what we want for the request (VPR)? */
+    /* To attach the listner only to the current connection, checks on outOfBandId field  */
+    /*agent.events.on(OutOfBandEventTypes.HandshakeReused, async ({payload}) => {
+            await agent.connections.rotate({connectionId: payload.connectionRecord.id})
+    });*/
+
+    agent.events.on(ConnectionEventTypes.ConnectionStateChanged, async ({payload}) => {
+        await ourListener(payload, req, res);
+    });
+    agent.events.on(OutOfBandEventTypes.HandshakeReused, async ({payload}) => {
+        //await ourListener(payload, req, res);
+    });
+
 })
 
 app.listen(PORT, (error) => {
@@ -363,10 +361,12 @@ app.listen(PORT, (error) => {
 function getAskarAnonCredsIndyModules(genesisTransactionsBCovrinTestNet) {
     const legacyIndyCredentialFormatService = new LegacyIndyCredentialFormatService()
     const legacyIndyProofFormatService = new LegacyIndyProofFormatService()
-
+    /* Il problema della */
     return {
         connections: new ConnectionsModule({
             autoAcceptConnections: true,
+            peerNumAlgoForDidRotation: PeerDidNumAlgo.GenesisDoc,
+            peerNumAlgoForDidExchangeRequests: PeerDidNumAlgo.GenesisDoc
         }),
         credentials: new CredentialsModule({
             autoAcceptCredentials: AutoAcceptCredential.Never,
@@ -405,7 +405,7 @@ function getAskarAnonCredsIndyModules(genesisTransactionsBCovrinTestNet) {
             }],
         }),
         dids: new DidsModule({
-            resolvers: [new IndyVdrIndyDidResolver()],
+            resolvers: [new IndyVdrIndyDidResolver(), new WebDidResolver()],
         }),
         askar: new AskarModule({
             ariesAskar,

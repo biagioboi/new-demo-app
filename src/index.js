@@ -9,9 +9,10 @@ let issuer;
 let params = new URLSearchParams(location.search);
 
 getBtn.onclick = function () {
-    appName = "theapp";
-    user = 'did:key:z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY';
-    issuer = 'did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA';
+
+    user = "did:web:bboi.solidcommunity.net:public";
+    issuer = "did:web:secureissuer.solidcommunity.net:public";
+    appName = "did:web:secureapp.solidcommunity.net:public";
 
     //Send requests following protocol
     VcBasedrequests();
@@ -38,28 +39,49 @@ async function VcBasedrequests() {
                 'vc': 'true'//So the server's VcHttpHandler component handles it
             },
             body: JSON.stringify({
-                'user': user,
-                'app': appName,
-                'vcissuer': issuer,
+                'VPCompliant': false,
+                'agent': user,
+                'client': appName,
+                'issuer': issuer,
             })
         });
         let result = await response.json();
         console.log(result);
-        responseArea.innerHTML = JSON.stringify(result);
+        responseArea.innerHTML = syntaxHighlight(JSON.stringify(result, null, 2));
         let VPrequest = result;
 
-        let nonce = undefined;
-        let domain = undefined;
-        try {
-            nonce = VPrequest.VerifiablePresentation.challenge;
-            domain = VPrequest.VerifiablePresentation.domain;
-        } catch (e) {
-            console.log("No nonce or domain received in response");
-            return;
+        let obj_new_request;
+        if (VPrequest.VerifiablePresentation !== undefined) { // Classical, no agent used
+            obj_new_request = {
+                challenge: VPrequest.VerifiablePresentation.challenge,
+                domain: VPrequest.VerifiablePresentation.domain,
+                owner: VPrequest.VerifiablePresentation.query.credentialQuery.owner.id,
+                issuer: VPrequest.VerifiablePresentation.query.credentialQuery.issuer.id,
+                creator: VPrequest.VerifiablePresentation.query.credentialQuery.creator.id,
+                client: VPrequest.VerifiablePresentation.query.credentialQuery.client.id,
+                agent: VPrequest.VerifiablePresentation.query.credentialQuery.agent.id
+            }
+        } else {
+            obj_new_request = {
+                challenge: VPrequest.options.challenge,
+                domain: VPrequest.options.domain,
+                target: VPrequest.presentation_definition.requestACP.target,
+                owner: VPrequest.presentation_definition.requestACP.owner,
+                issuer: VPrequest.presentation_definition.requestACP.issuer,
+                creator: VPrequest.presentation_definition.requestACP.creator,
+                client: VPrequest.presentation_definition.requestACP.client,
+                agent: VPrequest.presentation_definition.requestACP.agent,
+                input_descriptors: JSON.stringify(VPrequest.presentation_definition.input_descriptors)
+            }
+            if (VPrequest.type[0] === "VerifiablePresentationRequest") {
+                // It is signed, so, we have almost all the fields, except for the new proof field
+                obj_new_request.vpr = JSON.stringify(VPrequest)
+            }
         }
+        console.log(obj_new_request);
         $(".label-loader").html("Copy the code and accept the request on your mobile phone").fadeIn();
         $(".loader").fadeIn();
-        if (url === VPrequest.VerifiablePresentation.domain || true) {
+        if (url === obj_new_request.target) {
             //Send request to User to acquire VP (after 1 second delay)
             window.setTimeout(async () => {
                 let connectionId;
@@ -67,24 +89,19 @@ async function VcBasedrequests() {
                     method: "GET",
                     url: "http://localhost:8080/generateInvitation",
                     success: async function (data) {
-                        console.log(data)
-                        connectionId = data.connectionId
+                        obj_new_request.connectionId = data.connectionId;
                         $("#invitation").html(data.url)
                         $("#invitation").append("<img src=\"" + data.qrcode + "\">");
                         $.ajax({
                             method: "POST",
                             url: "http://localhost:8080/requestUserCredential",
-                            data: {
-                                connectionId: connectionId,
-                                challenge: VPrequest.VerifiablePresentation.challenge,
-                                domain: VPrequest.VerifiablePresentation.domain
-                            },
+                            data: obj_new_request,
                             success: async function (data) {
                                 $("#invitation").html("");
                                 $(".label-loader").css("display", "none").html("Proof accepted, sending the request to the server").fadeIn();
                                 $(".loader").css("display", "none").addClass("loader-almost-load").fadeIn();
-                                $("#responseVP").html(JSON.stringify(data, undefined, 2))
-                                let resource = await requestWithVP(url, data);
+                                $("#responseVP").html(syntaxHighlight(JSON.stringify(data, undefined, 2)));
+                                let resource = await requestWithVP(url, JSON.stringify(data));
                                 responseArea.innerHTML = resource;
                                 window.setTimeout(() => {
                                     $(".loader-loaded").css("display", "none")
@@ -221,4 +238,23 @@ async function speedTests(sampleSize) {
     }
     let averageTime = totalTime / sampleSize;
     console.log(`Average Time: ${averageTime}`);
+}
+
+function syntaxHighlight(json) {
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
 }

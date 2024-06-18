@@ -1,9 +1,9 @@
 {
   "wallet": {
-    "id": "ID_OF_YOUR_WALLET",
-    "key": "KEY_OF_YOUR_WALLET",
-    "seed_private_key": "SEED_FOR_THE_PRIVATE_KEY",
-    "endpoint": "ENDPOINT_OF_YOUR_WALLET",
-    "ledger_url": "LEDGER_URL"
+    "id": "SecureSolidApppppppppp",
+    "key": "solidserver000000000000000000101",
+    "seed_private_key": "afjdemoverysercure00000000037002",
+    "endpoint": "https://6e7f-130-159-223-162.ngrok-free.app",
+    "ledger_url": "http://test.bcovrin.vonx.io/genesis"
   }
 }

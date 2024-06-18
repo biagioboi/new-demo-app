@@ -1,0 +1,77 @@
+{
+  "presentationExchange": {
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://identity.foundation/presentation-exchange/submission/v1",
+      "https://bboi.solidcommunity.net/public/test.jsonld"
+    ],
+    "type": [
+      "SolidACPContext",
+      "VerifiablePresentation",
+      "PresentationSubmission"
+    ],
+    "acp": {
+      "agent": "did:key:z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY",
+      "creator": "did:key:z6MkhnfPNoDFRu7ChY1u8d2zoJJv9Un9Br1KhHAyaBawnh5c",
+      "owner": "did:key:z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY",
+      "client": "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA",
+      "issuer": "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA"
+    },
+    "holder": "did:key:z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY",
+    "presentation_submission": {
+      "id": "U2ET4rWtwg8s5mkokTsXP",
+      "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+      "descriptor_map": [
+        {
+          "id": "wa_driver_license",
+          "format": "ldp_vc",
+          "path": "$.verifiableCredential[0]"
+        }
+      ]
+    },
+    "verifiableCredential": [
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://w3id.org/citizenship/v1",
+          "https://w3id.org/security/bbs/v1"
+        ],
+        "id": "https://example.com/credentials/3732",
+        "type": [
+          "VerifiableCredential",
+          "PermanentResidentCard"
+        ],
+        "issuer": "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA",
+        "issuanceDate": "2010-01-01T19:23:24Z",
+        "credentialSubject": {
+          "alumniOf": "test",
+          "type": [
+            "PermanentResident",
+            "Person"
+          ],
+          "givenName": "JOHN",
+          "familyName": "SMITH",
+          "gender": "Male",
+          "image": "data:image/png;base64,iVBORw0KGgokJggg==",
+          "id": "did:key:z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY"
+        },
+        "proof": {
+          "verificationMethod": "did:key:z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA#z6Mkw4VsQTL36g5t4AA27M38ZgpEJE6ESas468vhZNhZJqjA",
+          "type": "Ed25519Signature2018",
+          "created": "2024-06-06T20:20:57Z",
+          "proofPurpose": "assertionMethod",
+          "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..EnDlyqOsKX_MEYvTQbQSyULkCCy1hQlCtqZ6TAkWSR9MOrHv4bfgv748CM8s0gcm7EWxXOT72vxucFbekG4WDw"
+        }
+      }
+    ],
+    "proof": {
+      "verificationMethod": "did:key:z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY#z6MkjiobbuCnEED7VRkNjWtVmPFmPEGULAG1AgvWMxeXMreY",
+      "type": "Ed25519Signature2018",
+      "created": "2024-06-11T18:03:47Z",
+      "proofPurpose": "authentication",
+      "challenge": "KO0huA3EBu4NLJKI5Ulw4A==",
+      "domain": "/my-pod/test-folder/test-resource.txt",
+      "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..AkGPhj2B_ROdHde-CbTmp99iLgY8o594MQprKWzP5iXzLO2wuiXbC5TLKLG2lCelZKyKrfQp6EYiZKhRnxHXCw"
+    }
+  }
+}
